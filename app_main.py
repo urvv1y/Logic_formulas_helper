@@ -220,8 +220,7 @@ HTML_TEMPLATE = """
     <div id="feedback-area"></div>
 
     <script>
-        
-        document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener("DOMContentLoaded", () => {
     const table1 = document.querySelector("table:nth-of-type(1)");
     if (!table1) return;
 
@@ -232,12 +231,12 @@ HTML_TEMPLATE = """
         const td = input.closest('td');
         const row = td.closest('tr');
         const colIndex = td.cellIndex;
-        const headerText = headerRow.cells[colIndex].innerText; 
+        const headerText = headerRow.cells[colIndex].innerText;
 
         input.addEventListener("mouseenter", () => {
             for (let idx = 0; idx < row.cells.length; idx++) {
                 const cell = row.cells[idx];
-                if (cell.querySelector('input')) continue; 
+                if (cell.querySelector('input')) continue;
 
                 const colHeader = headerRow.cells[idx].innerText.trim();
                 const isNegatedCol = colHeader.startsWith('!') || colHeader.startsWith('¬');
@@ -245,7 +244,6 @@ HTML_TEMPLATE = """
 
                 if (!varName || !headerText.includes(varName)) continue;
 
-                
                 let foundNegated = false;
                 let foundPlain = false;
                 let pos = headerText.indexOf(varName);
@@ -274,101 +272,134 @@ HTML_TEMPLATE = """
     });
 });
 
-        const savedFormulasList = {{ saved_formulas | tojson }};
+const savedFormulasList = {{ saved_formulas | tojson }};
 
-        function fillRandomFormulas() {
-            if (!savedFormulasList || savedFormulasList.length === 0) {
-                alert("Zatím nemáte uložené žádné formule.");
+function fillRandomFormulas() {
+    if (!savedFormulasList || savedFormulasList.length === 0) {
+        alert("Zatím nemáte uložené žádné formule.");
+        return;
+    }
+    const simpleFormulas = savedFormulasList.filter(f => !f.includes('⇒') && !f.includes('⇔') && !f.includes('∨'));
+    const complexFormulas = savedFormulasList.filter(f => f.includes('⇒') || f.includes('⇔') || f.includes('∨'));
+
+    const poolForSimple = simpleFormulas.length > 0 ? simpleFormulas : savedFormulasList;
+    const poolForComplex = complexFormulas.length > 0 ? complexFormulas : savedFormulasList;
+
+    const getRandomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    document.getElementById('f1-input').value = getRandomFrom(poolForSimple);
+    document.getElementById('f2-input').value = getRandomFrom(poolForSimple);
+    document.getElementById('f3-input').value = getRandomFrom(poolForComplex);
+}
+
+function replaceSymbols(input) {
+    let val = input.value;
+    val = val.replace(/<->/g, '⇔').replace(/->/g, '⇒').replace(/&/g, '∧').replace(/\|/g, '∨').replace(/!/g, '¬');
+    if (val !== input.value) { input.value = val; }
+}
+
+function moveToNext(input) {
+    if (input.value !== '0' && input.value !== '1') {
+        input.value = '';
+        return;
+    }
+
+    const table = input.closest('table');
+    const currentTd = input.closest('td');
+    const currentTr = currentTd.closest('tr');
+    const colIndex = currentTd.cellIndex;
+
+    let nextTr = currentTr.nextElementSibling;
+    while (nextTr) {
+        const nextTd = nextTr.cells[colIndex];
+        const nextInput = nextTd ? nextTd.querySelector('.logic-input') : null;
+        if (nextInput) {
+            nextInput.focus();
+            return;
+        }
+        nextTr = nextTr.nextElementSibling;
+    }
+
+    const dataRows = Array.from(table.rows).slice(1);
+    const colCount = table.rows[0].cells.length;
+
+    for (let c = colIndex + 1; c < colCount; c++) {
+        for (const tr of dataRows) {
+            const td = tr.cells[c];
+            const inp = td ? td.querySelector('.logic-input') : null;
+            if (inp) {
+                inp.focus();
                 return;
             }
-           const simpleFormulas = savedFormulasList.filter(f => !f.includes('⇒') && !f.includes('⇔') && !f.includes('⇒') && !f.includes('∨'));
-            const complexFormulas = savedFormulasList.filter(f => f.includes('⇒') || f.includes('⇔') || f.includes('∨'));
-
-            const poolForSimple = simpleFormulas.length > 0 ? simpleFormulas : savedFormulasList;
-            const poolForComplex = complexFormulas.length > 0 ? complexFormulas : savedFormulasList;
-
-            const getRandomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
-
-            document.getElementById('f1-input').value = getRandomFrom(poolForSimple);
-            document.getElementById('f2-input').value = getRandomFrom(poolForSimple);
-            
-            
-            document.getElementById('f3-input').value = getRandomFrom(poolForComplex);
         }
+    }
 
-        function replaceSymbols(input) {
-            let val = input.value;
-            val = val.replace(/<->/g, '⇔').replace(/->/g, '⇒').replace(/&/g, '∧').replace(/\\|/g, '∨').replace(/!/g, '¬');
-            if (val !== input.value) { input.value = val; }
+    const allTables = Array.from(document.querySelectorAll('table'));
+    const tableIdx = allTables.indexOf(table);
+    for (let i = tableIdx + 1; i < allTables.length; i++) {
+        const nextInput = allTables[i].querySelector('.logic-input');
+        if (nextInput) {
+            nextInput.focus();
+            return;
         }
+    }
+}
 
-        function moveToNext(input) {
-            if (input.value !== '0' && input.value !== '1') {
-                input.value = '';
-                return;
-            }
-            const inputs = Array.from(document.querySelectorAll('.logic-input'));
-            const currentIndex = inputs.indexOf(input);
-            if (currentIndex > -1 && currentIndex < inputs.length - 1) {
-                inputs[currentIndex + 1].focus();
-            }
+function checkAnswers() {
+    const inputs = document.querySelectorAll('.logic-input');
+    let correctCount = 0;
+    let totalCount = 0;
+    let hasError = false;
+
+    inputs.forEach(input => {
+        const correctAns = input.getAttribute('data-correct');
+        const td = input.closest('td');
+        td.classList.remove('cell-correct', 'cell-incorrect');
+
+        if (correctAns === "") { hasError = true; return; }
+
+        totalCount++;
+        if (input.value === correctAns) {
+            correctCount++;
+            td.classList.add('cell-correct');
+        } else {
+            td.classList.add('cell-incorrect');
         }
+    });
 
-        function checkAnswers() {
-            const inputs = document.querySelectorAll('.logic-input');
-            let correctCount = 0;
-            let totalCount = 0;
-            let hasError = false; 
-            
-            inputs.forEach(input => {
-                const correctAns = input.getAttribute('data-correct');
-                const td = input.closest('td');
-                td.classList.remove('cell-correct', 'cell-incorrect'); 
-                
-                if (correctAns === "") { hasError = true; return; }
-                
-                totalCount++;
-                if (input.value === correctAns) {
-                    correctCount++;
-                    td.classList.add('cell-correct');
-                } else {
-                    td.classList.add('cell-incorrect');
-                }
-            });
-            
-            const feedbackArea = document.getElementById('feedback-area');
-            feedbackArea.style.display = 'block';
-            feedbackArea.className = ''; 
-            
-            if (hasError) {
-                feedbackArea.innerHTML = "<strong>Chyba:</strong> Některé z vašich formulí obsahují syntaktickou chybu.";
-                feedbackArea.classList.add('feedback-warning');
-                return;
-            }
-            
-            let table2Analysis = "";
-            const table2Inputs = document.querySelectorAll('table:nth-of-type(2) .logic-input');
-            if (table2Inputs.length > 0) {
-                let ones = 0;
-                let zeros = 0;
-                table2Inputs.forEach(inp => {
-                    const ans = inp.getAttribute('data-correct');
-                    if (ans === '1') ones++;
-                    if (ans === '0') zeros++;
-                });
-                if (ones === table2Inputs.length) table2Analysis = "<span style='color:#155724;'><strong>TAUTOLOGIE</strong> (vždy pravdivá)</span>";
-                else if (zeros === table2Inputs.length) table2Analysis = "<span style='color:#721c24;'><strong>KONTRADIKCE</strong> (vždy nepravdivá)</span>";
-                else table2Analysis = "<strong>SPLNITELNÁ FORMULE</strong> (někdy pravdivá, někdy nepravdivá)";
-            }
+    const feedbackArea = document.getElementById('feedback-area');
+    feedbackArea.style.display = 'block';
+    feedbackArea.className = '';
 
-            let percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
-            let htmlContent = `<strong>Úspěšnost:</strong> ${correctCount} z ${totalCount} správně (${percentage} %)<br>`;
-            if (table2Analysis !== "") htmlContent += `<strong>Analýza složené formule:</strong> Vyhodnocovaná formule je ${table2Analysis}.`;
-            
-            feedbackArea.innerHTML = htmlContent;
-            if (correctCount === totalCount && totalCount > 0) feedbackArea.classList.add('feedback-success');
-            else feedbackArea.classList.add('feedback-warning');
-        }
+    if (hasError) {
+        feedbackArea.innerHTML = "<strong>Chyba:</strong> Některé z vašich formulí obsahují syntaktickou chybu.";
+        feedbackArea.classList.add('feedback-warning');
+        return;
+    }
+
+    let table2Analysis = "";
+    const table2Inputs = document.querySelectorAll('table:nth-of-type(2) .logic-input');
+    if (table2Inputs.length > 0) {
+        let ones = 0;
+        let zeros = 0;
+        table2Inputs.forEach(inp => {
+            const ans = inp.getAttribute('data-correct');
+            if (ans === '1') ones++;
+            if (ans === '0') zeros++;
+        });
+        if (ones === table2Inputs.length) table2Analysis = "<span style='color:#155724;'><strong>TAUTOLOGIE</strong> (vždy pravdivá)</span>";
+        else if (zeros === table2Inputs.length) table2Analysis = "<span style='color:#721c24;'><strong>KONTRADIKCE</strong> (vždy nepravdivá)</span>";
+        else table2Analysis = "<strong>SPLNITELNÁ FORMULE</strong> (někdy pravdivá, někdy nepravdivá)";
+    }
+
+    let percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+    let htmlContent = `<strong>Úspěšnost:</strong> ${correctCount} z ${totalCount} správně (${percentage} %)<br>`;
+    if (table2Analysis !== "") htmlContent += `<strong>Analýza složené formule:</strong> Vyhodnocovaná formule je ${table2Analysis}.`;
+
+    feedbackArea.innerHTML = htmlContent;
+    if (correctCount === totalCount && totalCount > 0) feedbackArea.classList.add('feedback-success');
+    else feedbackArea.classList.add('feedback-warning');
+}
     </script>
 </body>
 </html>
