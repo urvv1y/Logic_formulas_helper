@@ -123,6 +123,12 @@ HTML_TEMPLATE = """
         
         .alert-success { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-top: 15px; display: inline-block; }
 
+
+        table:first-of-type td.highlight-column {
+            background-color: #fff59d !important;
+            font-weight: bold;
+        }
+
         p.instruction { font-size: 1.1em; margin-bottom: 10px; font-weight: bold; }
         .legend { font-size: 0.9em; color: #666; margin-top: -10px; margin-bottom: 15px; }
     </style>
@@ -163,7 +169,7 @@ HTML_TEMPLATE = """
         </div>
         
         {% if save_message %}
-            <div class="alert-success">✓ {{ save_message }}</div>
+            <div class="alert-success">success {{ save_message }}</div>
         {% endif %}
     </form>
 
@@ -215,6 +221,59 @@ HTML_TEMPLATE = """
 
     <script>
         
+        document.addEventListener("DOMContentLoaded", () => {
+    const table1 = document.querySelector("table:nth-of-type(1)");
+    if (!table1) return;
+
+    const inputs = table1.querySelectorAll(".logic-input");
+    const headerRow = table1.rows[0];
+
+    inputs.forEach(input => {
+        const td = input.closest('td');
+        const row = td.closest('tr');
+        const colIndex = td.cellIndex;
+        const headerText = headerRow.cells[colIndex].innerText; 
+
+        input.addEventListener("mouseenter", () => {
+            for (let idx = 0; idx < row.cells.length; idx++) {
+                const cell = row.cells[idx];
+                if (cell.querySelector('input')) continue; 
+
+                const colHeader = headerRow.cells[idx].innerText.trim();
+                const isNegatedCol = colHeader.startsWith('!') || colHeader.startsWith('¬');
+                const varName = colHeader.replace('!', '').replace('¬', '').trim();
+
+                if (!varName || !headerText.includes(varName)) continue;
+
+                
+                let foundNegated = false;
+                let foundPlain = false;
+                let pos = headerText.indexOf(varName);
+                while (pos !== -1) {
+                    const charBefore = pos > 0 ? headerText.charAt(pos - 1) : '';
+                    if (charBefore === '¬' || charBefore === '!') {
+                        foundNegated = true;
+                    } else {
+                        foundPlain = true;
+                    }
+                    pos = headerText.indexOf(varName, pos + 1);
+                }
+
+                const shouldHighlight = isNegatedCol ? foundNegated : foundPlain;
+                if (shouldHighlight) {
+                    cell.classList.add('highlight-column');
+                }
+            }
+        });
+
+        input.addEventListener("mouseleave", () => {
+            row.querySelectorAll("td.highlight-column").forEach(el => {
+                el.classList.remove('highlight-column');
+            });
+        });
+    });
+});
+
         const savedFormulasList = {{ saved_formulas | tojson }};
 
         function fillRandomFormulas() {
