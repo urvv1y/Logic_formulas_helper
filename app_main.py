@@ -229,9 +229,9 @@ def format_logic_symbols(formula: str) -> str:
 def index():
 
     var_count = 3
-    f1 = "(B ∧ ¬A)"
-    f2 = "¬(C ∧ B)"
-    f3 = "(B ∧ ¬A) ⇒ ¬(C ∧ B)"
+    f1 = "(X ∧ ¬Y)"
+    f2 = "¬(Z ∧ X)"
+    f3 = "(X ∧ ¬Y) ⇒ ¬(Z ∧ A)"
 
     if request.method == 'POST':
         try:
