@@ -40,7 +40,6 @@ def evaluate_formula(formula_str, headers, row_values):
         return "1" if res.val else "0"
     except Exception:
         return ""
-
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="cs">
@@ -48,87 +47,31 @@ HTML_TEMPLATE = """
     <meta charset="UTF-8">
     <title>Procvičování logických formulí</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            color: #333;
-            background-color: #fafafa;
-        }
-        .settings-form {
-            background-color: #fff;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .form-row {
-            margin-bottom: 15px;
-        }
-        .form-row label {
-            display: inline-block;
-            width: 250px;
-            font-weight: bold;
-        }
-        .form-row input[type="text"], .form-row input[type="number"] {
-            padding: 8px;
-            width: 300px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1em;
-            font-family: "Times New Roman", serif;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #808000;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 1em;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #6b6b00;
-        }
-        table {
-            border-collapse: collapse;
-            margin-bottom: 40px;
-            text-align: center;
-            background-color: #fff;
-        }
-        th, td {
-            border: 2px solid #808000;
-            padding: 8px 15px;
-        }
-        th {
-            font-style: italic;
-            font-family: "Times New Roman", serif;
-            font-size: 1.2em;
-        }
-        td:has(input) {
-            background-color: #f7f7f7;
-        }
-        .radio-group {
-            display: inline-flex;
-            gap: 5px;
-            align-items: center;
-            color: #555;
-        }
-        .radio-group input {
-            margin: 0 2px 0 5px;
-            cursor: pointer;
-        }
-        p.instruction {
-            font-size: 1.1em;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-        .legend {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: -10px;
-            margin-bottom: 15px;
-        }
+        body { font-family: Arial, sans-serif; margin: 40px; color: #333; background-color: #fafafa; }
+        .settings-form { background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .form-row { margin-bottom: 15px; }
+        .form-row label { display: inline-block; width: 250px; font-weight: bold; }
+        .form-row input[type="text"], .form-row input[type="number"] { padding: 8px; width: 300px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; font-family: "Times New Roman", serif; }
+        
+        button { padding: 10px 20px; background-color: #808000; color: white; border: none; border-radius: 4px; font-size: 1em; cursor: pointer; transition: 0.2s; }
+        button:hover { background-color: #6b6b00; }
+        
+        .check-btn { background-color: #2196F3; margin-top: 20px; font-size: 1.1em; }
+        .check-btn:hover { background-color: #0b7dda; }
+        
+        table { border-collapse: collapse; margin-bottom: 40px; text-align: center; background-color: #fff; }
+        th, td { border: 2px solid #808000; padding: 8px 15px; transition: background-color 0.3s; }
+        th { font-style: italic; font-family: "Times New Roman", serif; font-size: 1.2em; }
+        td:has(.radio-group) { background-color: #f7f7f7; }
+        
+        
+        .cell-correct { background-color: #d4edda !important; }
+        .cell-incorrect { background-color: #f8d7da !important; }
+        
+        .radio-group { display: inline-flex; gap: 5px; align-items: center; color: #555; }
+        .radio-group input { margin: 0 2px 0 5px; cursor: pointer; }
+        p.instruction { font-size: 1.1em; margin-bottom: 10px; font-weight: bold; }
+        .legend { font-size: 0.9em; color: #666; margin-top: -10px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -164,9 +107,10 @@ HTML_TEMPLATE = """
                 {% if r_idx == 0 %}
                     <th>{{ cell }}</th>
                 {% else %}
-                    {% if cell == "" %}
+                    {% if cell.startswith("INPUT:") %}
+                        {% set correct_ans = cell.split(":")[1] %}
                         <td>
-                            <div class="radio-group">
+                            <div class="radio-group" data-correct="{{ correct_ans }}">
                                 <input type="radio" name="t1_r{{r_idx}}_c{{loop.index0}}" value="0"> 0
                                 <input type="radio" name="t1_r{{r_idx}}_c{{loop.index0}}" value="1"> 1
                             </div>
@@ -189,9 +133,10 @@ HTML_TEMPLATE = """
                 {% if r_idx == 0 %}
                     <th>{{ cell }}</th>
                 {% else %}
-                    {% if cell == "" %}
+                    {% if cell.startswith("INPUT:") %}
+                        {% set correct_ans = cell.split(":")[1] %}
                         <td>
-                            <div class="radio-group">
+                            <div class="radio-group" data-correct="{{ correct_ans }}">
                                 <input type="radio" name="t2_r{{r_idx}}_c{{loop.index0}}" value="0"> 0
                                 <input type="radio" name="t2_r{{r_idx}}_c{{loop.index0}}" value="1"> 1
                             </div>
@@ -205,20 +150,54 @@ HTML_TEMPLATE = """
         {% endfor %}
     </table>
 
+    <button type="button" class="check-btn" onclick="checkAnswers()">Zkontrolovat správnost</button>
+
     <script>
-       =
         function replaceSymbols(input) {
             let val = input.value;
-           =
-            val = val.replace(/<->/g, '⇔');
-            val = val.replace(/->/g, '⇒');
-            val = val.replace(/&/g, '∧');
-            val = val.replace(/\\|/g, '∨');
-            val = val.replace(/!/g, '¬');
+            val = val.replace(/<->/g, '⇔').replace(/->/g, '⇒').replace(/&/g, '∧').replace(/\\|/g, '∨').replace(/!/g, '¬');
+            if (val !== input.value) { input.value = val; }
+        }
 
-           
-            if (val !== input.value) {
-                input.value = val;
+        function checkAnswers() {
+            let allCorrect = true;
+            let answeredAny = false;
+            let hasError = false; 
+            
+            const groups = document.querySelectorAll('.radio-group');
+            
+            groups.forEach(group => {
+                const correctAns = group.getAttribute('data-correct');
+                const td = group.closest('td');
+                td.classList.remove('cell-correct', 'cell-incorrect'); 
+                
+                if (correctAns === "") {
+                    hasError = true;
+                    return; 
+                }
+                
+                const selected = group.querySelector('input[type="radio"]:checked');
+                
+                if (selected) {
+                    answeredAny = true;
+                    if (selected.value === correctAns) {
+                        td.classList.add('cell-correct');
+                    } else {
+                        td.classList.add('cell-incorrect');
+                        allCorrect = false;
+                    }
+                } else {
+                    td.classList.add('cell-incorrect'); 
+                    allCorrect = false;
+                }
+            });
+            
+            if (hasError) {
+                alert("Některé z vašich formulí obsahují syntaktickou chybu (např. chybějící závorka), systém je nemohl vyhodnotit.");
+            } else if (allCorrect && answeredAny) {
+                alert("Výborně! Všechny hodnoty jsou správně.");
+            } else if (!answeredAny) {
+                alert("Nejprve musíte vyplnit nějaké hodnoty.");
             }
         }
     </script>
