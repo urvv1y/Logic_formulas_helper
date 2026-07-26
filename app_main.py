@@ -84,6 +84,20 @@ HTML_TEMPLATE = """
         .radio-group input { margin: 0 2px 0 5px; cursor: pointer; }
         p.instruction { font-size: 1.1em; margin-bottom: 10px; font-weight: bold; }
         .legend { font-size: 0.9em; color: #666; margin-top: -10px; margin-bottom: 15px; }
+
+        r:hover th, 
+        tr:hover td {
+            border-color: #2196F3; 
+            background-color: #e3f2fd !important; 
+            color: #000; 
+        }
+        
+       
+        tr:first-child:hover th {
+            border-color: #808000;
+            background-color: #fff !important;
+        }
+
     </style>
 </head>
 <body>
