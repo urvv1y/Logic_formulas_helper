@@ -3,42 +3,42 @@ ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
 def generate_headers(var_count: int) -> list[str]:
-    """
-    Generates a list of headers for a given number of variables.
-
-    Args:
-        var_count (int): The number of variables.
-    """
-
+    """Create a list of letters for the table headers."""
     assert var_count > 0 and var_count < 27
-    return [ALPHABET[i] for i in range(var_count)]
+
+    headers = []
+    for i in range(var_count):
+        headers.append(ALPHABET[i])
+
+    return headers
 
 
 def fill_the_table(var_count: int) -> list[list[str]]:
-    """
-    Fills a truth table with boolean values for a given number of variables.
+    """Create a truth table for the given number of variables."""
+    table = [generate_headers(var_count)]
 
-    Args:
-        var_count (int): The number of variables.
-    """
+    row_count = 2 ** var_count
 
-    table: list[list[str]] = generate_headers(var_count)
+    for row_index in range(row_count):
+        row = []
 
-    row_count = 2**var_count
-    for i in range(row_count):
-        certain_row = []
-
-        for j in range(var_count):
-            if j == 0:
-                value = i % 2
+        for col_index in range(var_count):
+            if col_index == 0:
+                value = row_index % 2
             else:
-                value = (i // (2 ** j)) % 2
+                value = (row_index // (2 ** col_index)) % 2
 
-            certain_row.append(str(value))
-        table.append(certain_row)
+            row.append(str(value))
+
+        table.append(row)
+
     return table
 
 
-for row in fill_the_table(3):
-    print(row)
-    
+def print_table(table: list[list[str]]):
+    """Print the table row by row."""
+    for row in table:
+        print(" | ".join(row))
+
+
+
