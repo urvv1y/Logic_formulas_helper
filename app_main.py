@@ -23,6 +23,24 @@ class LogicVar:
     def __eq__(self, other):
         return LogicVar(self.var == other.val) # <->
 
+def evaluate_formula(formula_str, headers, row_values):
+    py_form = formula_str.replace('⇔', ' == ') \
+                         .replace('⇒', ' <= ') \
+                         .replace('∧', ' & ') \
+                         .replace('∨', ' | ') \
+                         .replace('¬', ' ~ ')
+    
+    variables = {}
+    for h, v in zip(headers, row_values):
+        if not h.startswith('!'):
+            variables[h] = LogicVar(v)
+            
+    try:
+        res = eval(py_form, {"__builtins__": {}}, variables)
+        return "1" if res.val else "0"
+    except Exception:
+        return ""
+
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="cs">
