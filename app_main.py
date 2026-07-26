@@ -3,6 +3,25 @@ import main_logic as main
 
 app = Flask(__name__)
 
+class LogicVar:
+    """Evaluator"""
+    def __init__(self, val):
+        self.val = bool(int(val))
+
+    def __invert__(self):
+        return LogicVar(not self.val) # NOT
+    
+    def __and__(self, other):
+        return LogicVar(self.val and other.val) # AND
+
+    def __or__(self, other):
+        return LogicVar(self.val or other.val) # OR
+
+    def __le__(self, other):
+        return LogicVar((not self.val) or other.val) # ->
+
+    def __eq__(self, other):
+        return LogicVar(self.var == other.val) # <->
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
