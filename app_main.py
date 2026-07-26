@@ -231,7 +231,7 @@ def index():
     var_count = 3
     f1 = "(X ∧ ¬Y)"
     f2 = "¬(Z ∧ X)"
-    f3 = "(X ∧ ¬Y) ⇒ ¬(Z ∧ A)"
+    f3 = "(X ∧ ¬Y) ⇒ ¬(Z ∧ X)"
 
     if request.method == 'POST':
         try:
