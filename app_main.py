@@ -21,7 +21,7 @@ class LogicVar:
         return LogicVar((not self.val) or other.val) # ->
 
     def __eq__(self, other):
-        return LogicVar(self.var == other.val) # <->
+        return LogicVar(self.val == other.val) # <->
 
 def evaluate_formula(formula_str, headers, row_values):
     py_form = formula_str.replace('⇔', ' == ') \
@@ -32,14 +32,26 @@ def evaluate_formula(formula_str, headers, row_values):
     
     variables = {}
     for h, v in zip(headers, row_values):
-        if not h.startswith('!'):
-            variables[h] = LogicVar(v)
-            
+        if not h.startswith('!') and v in ('0', '1'):
+            variables[h] = LogicVar(v)    
     try:
         res = eval(py_form, {"__builtins__": {}}, variables)
         return "1" if res.val else "0"
     except Exception:
         return ""
+
+def add_evaluated_formula(table, formula):
+    if not table or not formula.strip():
+        return table
+    headers = table[0]
+    new_table = [headers + [formula]]
+    
+    for row in table[1:]:
+        correct_ans = evaluate_formula(formula, headers, row)
+        new_table.append(row + [f"INPUT:{correct_ans}"])
+        
+    return new_table
+    
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="cs">
@@ -237,14 +249,14 @@ def index():
     
     t1 = base_table
     if f1.strip(): 
-        t1 = main.expand_table_by_logical_formula(t1, f1)
+        t1 = add_evaluated_formula(t1, f1)
     if f2.strip():
-        t1 = main.expand_table_by_logical_formula(t1, f2)
+        t1 = add_evaluated_formula(t1, f2)
         
     
     t2 = base_table
     if f3.strip():
-        t2 = main.expand_table_by_logical_formula(t2, f3)
+        t2 = add_evaluated_formula(t2, f3)
     
     
     return render_template_string(
