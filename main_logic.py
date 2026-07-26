@@ -1,5 +1,5 @@
 
-ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+LETTERS = "XYZABCDEFGHIJKLMNOPQRSTUVW"
 
 
 def generate_headers(var_count: int) -> list[str]:
@@ -8,7 +8,13 @@ def generate_headers(var_count: int) -> list[str]:
 
     headers = []
     for i in range(var_count):
-        headers.append(ALPHABET[i])
+        headers.append(LETTERS[i])
+
+
+    for i in range(var_count):
+        headers.append("!" + LETTERS[i])
+
+    # generates variable + NOT of the variables
 
     return headers
 
@@ -32,6 +38,11 @@ def fill_the_table(var_count: int) -> list[list[str]]:
 
         table.append(row)
 
+        for col_index in range(var_count):
+            original_value = row[col_index]
+            negated_value = "1" if original_value == "0" else "0"
+            row.append(negated_value)
+
     return table
 
 
@@ -45,7 +56,7 @@ def expand_table_by_new_variable(table: list[list[str]], new_variable_letter: st
     """Expand the existing truth table by adding a new variable column."""
     
     current_var_count = len(table[0])
-    next_var_letter = ALPHABET[current_var_count]
+    next_var_letter = LETTERS[current_var_count]
     
     new_header = table[0] + [new_variable_letter]
     new_table = [new_header]
