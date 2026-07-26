@@ -222,17 +222,19 @@ HTML_TEMPLATE = """
                 alert("Zatím nemáte uložené žádné formule.");
                 return;
             }
-            
-           
-            const getRandomFormula = () => {
-                const randomIndex = Math.floor(Math.random() * savedFormulasList.length);
-                return savedFormulasList[randomIndex];
-            };
+           const simpleFormulas = savedFormulasList.filter(f => !f.includes('⇒') && !f.includes('⇔') && !f.includes('⇒') && !f.includes('∨'));
+            const complexFormulas = savedFormulasList.filter(f => f.includes('⇒') || f.includes('⇔') || f.includes('∨'));
 
-          
-            document.getElementById('f1-input').value = getRandomFormula();
-            document.getElementById('f2-input').value = getRandomFormula();
-            document.getElementById('f3-input').value = getRandomFormula();
+            const poolForSimple = simpleFormulas.length > 0 ? simpleFormulas : savedFormulasList;
+            const poolForComplex = complexFormulas.length > 0 ? complexFormulas : savedFormulasList;
+
+            const getRandomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+            document.getElementById('f1-input').value = getRandomFrom(poolForSimple);
+            document.getElementById('f2-input').value = getRandomFrom(poolForSimple);
+            
+            
+            document.getElementById('f3-input').value = getRandomFrom(poolForComplex);
         }
 
         function replaceSymbols(input) {
@@ -323,11 +325,11 @@ def format_logic_symbols(formula: str) -> str:
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-
     var_count = 3
     f1 = "(X ∧ ¬Y)"
     f2 = "¬(Z ∧ X)"
     f3 = "(X ∧ ¬Y) ⇒ ¬(Z ∧ X)"
+    save_message = ""
 
     if request.method == 'POST':
         try:
@@ -364,7 +366,9 @@ def index():
         var_count=var_count,
         f1=f1, 
         f2=f2, 
-        f3=f3
+        f3=f3,
+        saved_formulas=saved_formulas,
+        save_message=save_message
     )
 
 if __name__ == '__main__':
